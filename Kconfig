@@ -1,0 +1,5 @@
+menuconfig MODULES_DOWNLINK_PROTOCOL
+	bool "FCC Downlink"
+	default y
+	---help---
+		Enable the Downlink Protocol
