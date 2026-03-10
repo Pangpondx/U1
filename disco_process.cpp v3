@@ -1,0 +1,119 @@
+#include "disco_protocol.h"
+
+extern DiscoProtocol *g_disco_instance;
+
+int DiscoProtocol::process_task_tampoline(int argc, char *argv[])
+{
+	if(g_disco_instance){
+		g_disco_instance->process_task_main();
+	}
+	return 0;
+}
+
+float DiscoProtocol::convert_raw_to_percent(int16_t raw_value)
+{
+	//////raw data 32767 = 140%//////
+            //32767 / 140 = 234.05//
+	const float divisor = 234.05f;
+	return raw_value / divisor;
+}
+
+void DiscoProtocol::process_disco(uint8_t* payload, uint8_t len){
+	UPLINK_DISCO *data = (UPLINK_DISCO*)(payload);
+	disco_msg.packet_id = data->packet_id;
+    	disco_msg.length_in_bytes = data->length_in_bytes;
+    	disco_msg.left_flap_cmd = data->left_flap_cmd;
+    	disco_msg.right_flap_cmd = data->right_flap_cmd;
+    	disco_msg.left_aileron_cmd = data->left_aileron_cmd;
+    	disco_msg.right_aileron_cmd = data->right_aileron_cmd;
+    	disco_msg.left_elevator_cmd = data->left_elevator_cmd;
+    	disco_msg.right_elevator_cmd = data->right_elevator_cmd;
+    	disco_msg.left_rudder_cmd = data->left_rudder_cmd;
+    	disco_msg.right_rudder_cmd = data->right_rudder_cmd;
+    	disco_msg.throttle_cmd = data->throttle_cmd;
+    	disco_msg.nose_wheel_cmd = data->nose_wheel_cmd;
+    	disco_msg.brake_cmd = data->brake_cmd;
+	disco_pct_msg.packet_id_percent = data->packet_id;
+    	disco_pct_msg.length_in_bytes_percent = data->length_in_bytes;
+    	disco_pct_msg.left_flap_cmd_percent = convert_raw_to_percent(data->left_flap_cmd);
+    	disco_pct_msg.right_flap_cmd_percent = convert_raw_to_percent(data->right_flap_cmd);
+    	disco_pct_msg.left_aileron_cmd_percent = convert_raw_to_percent(data->left_aileron_cmd);
+    	disco_pct_msg.right_aileron_cmd_percent = convert_raw_to_percent(data->right_aileron_cmd);
+    	disco_pct_msg.left_elevator_cmd_percent = convert_raw_to_percent(data->left_elevator_cmd);
+    	disco_pct_msg.right_elevator_cmd_percent = convert_raw_to_percent(data->right_elevator_cmd);
+    	disco_pct_msg.left_rudder_cmd_percent = convert_raw_to_percent(data->left_rudder_cmd);
+    	disco_pct_msg.right_rudder_cmd_percent = convert_raw_to_percent(data->right_rudder_cmd);
+    	disco_pct_msg.throttle_cmd_percent = convert_raw_to_percent(data->throttle_cmd);
+    	disco_pct_msg.nose_wheel_cmd_percent = convert_raw_to_percent(data->nose_wheel_cmd);
+    	disco_pct_msg.brake_cmd_percent = (float)data->brake_cmd / 2.0f;
+	servo.timestamp = hrt_absolute_time();
+	servo.timestamp_sample = hrt_absolute_time();
+	servo.control[0] = disco_msg.left_flap_cmd/32767;
+	servo.control[1] = disco_msg.right_flap_cmd/32767;
+	servo.control[2] = disco_msg.left_aileron_cmd/32767;
+	servo.control[3] = disco_msg.right_aileron_cmd/32767;
+	servo.control[4] = disco_msg.left_rudder_cmd/32767;
+	servo.control[5] = disco_msg.right_rudder_cmd/32767;
+	servo.control[6] = disco_msg.throttle_cmd/32767;
+	servo.control[7] = disco_msg.brake_cmd/200;
+	// UPLINK_DISCO_PERCENT data_pct;
+	// data_pct.packet_id = data->packet_id;
+	// data_pct.length_in_bytes = data->length_in_bytes;
+	// data_pct.left_flap_cmd = convert_raw_to_percent(data->left_flap_cmd);
+    	// data_pct.right_flap_cmd = convert_raw_to_percent(data->right_flap_cmd);
+    	// data_pct.left_aileron_cmd = convert_raw_to_percent(data->left_aileron_cmd);
+    	// data_pct.right_aileron_cmd = convert_raw_to_percent(data->right_aileron_cmd);
+    	// data_pct.left_elevator_cmd = convert_raw_to_percent(data->left_elevator_cmd);
+    	// data_pct.right_elevator_cmd = convert_raw_to_percent(data->right_elevator_cmd);
+    	// data_pct.left_rudder_cmd = convert_raw_to_percent(data->left_rudder_cmd);
+    	// data_pct.right_rudder_cmd = convert_raw_to_percent(data->right_rudder_cmd);
+    	// data_pct.throttle_cmd = convert_raw_to_percent(data->throttle_cmd);
+    	// data_pct.nose_wheel_cmd = convert_raw_to_percent(data->nose_wheel_cmd);
+    	// data_pct.brake_cmd = (float)data->brake_cmd / 2.0f;
+	// PX4_INFO(" Packet ID              : %u", data_pct.packet_id);
+        // PX4_INFO(" Length in bytes        : %u", data_pct.length_in_bytes);
+        // PX4_INFO(" Left flap command      : %f", (double)data_pct.left_flap_cmd);
+        // PX4_INFO(" Right flap command     : %f", (double)data_pct.right_flap_cmd);
+        // PX4_INFO(" Left aileron command   : %f", (double)data_pct.left_aileron_cmd);
+        // PX4_INFO(" Right aileron command  : %f", (double)data_pct.right_aileron_cmd);
+        // PX4_INFO(" Left elevator command  : %f", (double)data_pct.left_elevator_cmd);
+        // PX4_INFO(" Right elevator command : %f", (double)data_pct.right_elevator_cmd);
+        // PX4_INFO(" Left rudder command    : %f", (double)data_pct.left_rudder_cmd);
+        // PX4_INFO(" Right rudder command   : %f", (double)data_pct.right_rudder_cmd);
+        // PX4_INFO(" Throttle command       : %f", (double)data_pct.throttle_cmd);
+        // PX4_INFO(" Nose wheel command     : %f", (double)data_pct.nose_wheel_cmd);
+        // PX4_INFO(" Break command          : %f", (double)data_pct.brake_cmd);
+}
+
+void DiscoProtocol::process_task_main()
+{
+	while(!task_should_exit){
+		sem_wait(&process_sem);
+		if(task_should_exit) break;
+		pthread_mutex_lock(&data_mutex);
+		MESSAGE_HEADER *header = (MESSAGE_HEADER*) buffer;
+		msg.source_id = header->source_id;
+		msg.take_control = header->take_control;
+		msg.sequence = header->sequence;
+		msg.unix_time_stamp = header->unix_time_stamp;
+		msg.utc_microsecond_time_stamp = header->utc_microsecond_time_stamp;
+		uint8_t *ptr = &buffer[17];
+		int count_index = 0;
+		int total_len = header->length;
+		void (DiscoProtocol::*process_data)(uint8_t*, uint8_t);
+		while(count_index < total_len){
+			uint8_t id = ptr[0];
+			uint8_t len = ptr[1];
+			if(id == 0x02){
+				process_data = &DiscoProtocol::process_disco;
+				(this->*process_data)(ptr,len);
+				//PX4_INFO("%8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f",(double)servo.control[0],(double)servo.control[1],(double)servo.control[2],(double)servo.control[3],(double)servo.control[4],(double)servo.control[5],(double)servo.control[6],(double)servo.control[7]);
+			}
+			int step = 2 + len;
+			count_index += step;
+			ptr += step;
+		}
+		pthread_mutex_unlock(&data_mutex);
+	}
+	process_task_running = false;
+}
